@@ -9,10 +9,11 @@ from bank_logic import Bank,Klient
 from bank_login import User,Database
 from bank_wykres import csv,dane
 from wx_patern import Patterns 
-from sql_bank import add_client
+from sql_bank import add_client,client_info,update_balance
 
 #inicjujemy obiekty klas składowych 
 bank = Bank()
+
 data= Database()
 pattern=Patterns()
 
@@ -69,14 +70,7 @@ class Info_Klient_Dialog(wx.Dialog):
         imie=self.text_ctrl[0].GetValue()
         nazwisko=self.text_ctrl[1].GetValue()
         try:
-            conn = sqlite3.connect("banking.db")
-            cursor = conn.cursor()
-            
-            cursor.execute("""
-            SELECT * FROM customers WHERE name = ? AND surname = ?
-            """, (imie, nazwisko))
-            
-            klient = cursor.fetchone()
+            klient = client_info(imie,nazwisko,DB)
 
             if not klient:
                 raise ValueError('Nie znaleziono klienta')
@@ -100,27 +94,10 @@ class Wpłata_Dialog(wx.Dialog):
         self.Centre()
         
     def dodaj_srodki(self, event):
-        id = self.text_ctrl[0].GetValue()
-        wplata = self.text_ctrl[1].GetValue()
-        conn = sqlite3.connect("banking.db")
-        cursor = conn.cursor()
-            
-        cursor.execute("""
-        SELECT * FROM customers WHERE id = ?
-        """, (id))
-            
-        klient = cursor.fetchone()
-
         try:
-            if not klient:
-               raise ValueError('Nie znaleziono klienta')
-            elif float(wplata) < 0:
-                raise ValueError('Za mała kwota')
-            new_balance = klient[3] + wplata
-            cursor.execute(""" 
-            UPDATE customers balance = ?
-                           """)(new_balance)
-            klient.dodaj_historie("wplata", f"+{wplata}", BAZA_TRANZAKCJI)
+            id = self.text_ctrl[0].GetValue()
+            amount = self.text_ctrl[1].GetValue()
+            update_balance(id,amount,DB,'+')
             wx.MessageBox("Akcja wykonana pomyślnie","informacja",wx.OK)
             self.Destroy()
         except ValueError as e:
@@ -143,16 +120,8 @@ class Wypłata_Dialog(wx.Dialog):
     def wypłać(self, event):
         id = self.text_ctrl[0].GetValue()
         wplata = self.text_ctrl[1].GetValue()
-        klient = bank.znajdz_klienta(id)
         try:
-            if not klient:
-                raise ValueError('Nie znaleziono klienta')
-            elif float(wplata) < 0:
-                raise ValueError('Za mała kwota')
-            elif klient.stan_konta - float(wplata) < 0:
-                raise ValueError('Nie wystarczająca ilość środków do wykonania opeacji')
-            klient.stan_konta -= float(wplata)
-            klient.dodaj_historie("wyplata", f"-{wplata}", BAZA_TRANZAKCJI)
+            update_balance(id,wplata,DB,"-")
             wx.MessageBox("Akcja wykonana pomyślnie","informacja",wx.OK)
             self.Destroy()
         except ValueError as e:

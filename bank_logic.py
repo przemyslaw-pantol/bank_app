@@ -31,7 +31,7 @@ class Klient:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO transactions (id_number, type, amount ,date, time)
-            VALUES (?, ?, ? ,?,?)
+            VALUES (?, ?, ? ,? ,?)
             """, (self.nr_klienta, rodzaj, ilosc, dzien ,czas))
         conn.commit()
         conn.close()
