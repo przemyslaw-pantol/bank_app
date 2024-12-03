@@ -1,9 +1,9 @@
 import random
 from datetime import datetime
+import sqlite3
 
 class Klient:
-    ID = 1
-
+    ID=1
     def __init__(self, imie, nazwisko):
         self.id = Klient.ID
         Klient.ID += 1
@@ -12,15 +12,12 @@ class Klient:
         self.stan_konta = 0.0
         self.nr_klienta = str(self.nr_klient())
         self.historia=[]
-    #generowanie nr klienta
     def nr_klient(self):
         a = ""
         c = ""
         b = str(self.id)
-        #dopełnianie zerami ID
         for _ in range((len(b)), 6):
             a = a + "0"
-            #6 losowych liczb
         for _ in range(0, 6):
             c = c + str(random.randint(0, 9))
         return f"{a}{self.id}{c}"
@@ -29,15 +26,25 @@ class Klient:
         now=datetime.now()
         czas=now.strftime("%H:%M:%S")
         dzien=now.date()
-        #dodoanie histori do klienta
         self.historia.append(f"{self.nr_klienta},{rodzaj},{ilosc},{dzien},{czas}")
-        #dopisanie rekordu do pliku z tranzakcjami
-        with open(file,"a") as file:
-            file.write(self.historia[-1]+"\n")
+        conn = sqlite3.connect("banking.db")
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO transactions (id_number, type, amount ,date, time)
+            VALUES (?, ?, ? ,?,?)
+            """, (self.nr_klienta, rodzaj, ilosc, dzien ,czas))
+        conn.commit()
+        conn.close()
+        print("done")
 
     def inf(self,id,bank):
-        #jesli znajdziemy klienta zwracamy jego dane 
-        klient=bank.znajdz_klienta(id)
+        conn = sqlite3.connect("banking.db")
+        cursor = conn.cursor()
+        klient=cursor.execute("""
+            SELECT FROM customers WHERE id_number = ? 
+            """, (self.nr_klienta))
+        conn.commit()
+        conn.close()
         if klient:
             return f"Imie {klient.imie} Nazwisko: {klient.nazwisko} Numer: {klient.nr_klienta} saldo= {klient.stan_konta}"
 

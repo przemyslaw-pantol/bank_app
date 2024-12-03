@@ -3,11 +3,13 @@ import wx
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import sys
+import sqlite3
 #dodajemy moduł z plików
 from bank_logic import Bank,Klient
 from bank_login import User,Database
 from bank_wykres import csv,dane
 from wx_patern import Patterns 
+from sql_bank import add_client
 
 #inicjujemy obiekty klas składowych 
 bank = Bank()
@@ -18,7 +20,7 @@ pattern=Patterns()
 BAZA_KLIENTOW = "dane_bank.csv"
 BAZA_TRANZAKCJI = "C:\\Users\\przem\\Downloads\\bank objekt-20240609T202045Z-001\\bank objekt\\tranzakcje.csv"
 BAZA_LOGOWANIE = "C:\\Users\\przem\\Downloads\\bank objekt-20240609T202045Z-001\\bank objekt\\loginy.csv"
-
+DB = "banking.db"
 #tworzymy okna dialogowe konretnych funkcji bankowych 
 class Add_Client_Dialog(wx.Dialog):
     def __init__(self, parent):
@@ -42,18 +44,9 @@ class Add_Client_Dialog(wx.Dialog):
                     raise ValueError('uzupełnij imię lub nazwisko')
                 if not imie.isalpha() or not nazwisko.isalpha():
                     raise  ValueError('nazwisko i imie musi składać się z samych liter')
-                c = Klient(imie, nazwisko)
+                klient=add_client(imie,nazwisko,DB)
 
-                try:
-                    import pyperclip
-                    pyperclip.copy(c.nr_klienta)
-                    text = 'Nr klieenta został przeniesiony do schowka'
-                except ImportError:
-                    print('Brak modułu pyperclip')
-                    text = None
-
-                bank.dodaj_klienta(c,BAZA_KLIENTOW)
-                wx.MessageBox(f"Konto Pani/Pana {imie} {nazwisko} o nr {c.nr_klienta} zostało utworzone.\n{text} ", "Powiadomienie",wx.OK | wx.ICON_INFORMATION)
+                wx.MessageBox(f"Konto Pani/Pana {imie} {nazwisko} o nr {klient} zostało utworzone.", "Powiadomienie",wx.OK | wx.ICON_INFORMATION)
                 self.Destroy()
         except ValueError as e:
                 wx.MessageBox(f"Błąd podczas tworzenia konta: {e}", "Błąd", wx.OK | wx.ICON_ERROR)
@@ -75,11 +68,20 @@ class Info_Klient_Dialog(wx.Dialog):
     def info(self,event):
         imie=self.text_ctrl[0].GetValue()
         nazwisko=self.text_ctrl[1].GetValue()
-        
         try:
-            if not bank.inf(imie,nazwisko):
+            conn = sqlite3.connect("banking.db")
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+            SELECT * FROM customers WHERE name = ? AND surname = ?
+            """, (imie, nazwisko))
+            
+            klient = cursor.fetchone()
+
+            if not klient:
                 raise ValueError('Nie znaleziono klienta')
-            wx.MessageBox(bank.inf(imie,nazwisko), "Info", wx.OK | wx.ICON_INFORMATION)
+            client_data = f"name: {klient[1]}, surname: {klient[2]},balance: {klient[3]}, id_number:{klient[4]}"
+            wx.MessageBox(client_data, "Info", wx.OK | wx.ICON_INFORMATION)
         except ValueError as e:
             wx.MessageBox(f"Błąd podczas wykonywania akcji: {e}", "Błąd", wx.OK | wx.ICON_ERROR)
 
@@ -100,13 +102,24 @@ class Wpłata_Dialog(wx.Dialog):
     def dodaj_srodki(self, event):
         id = self.text_ctrl[0].GetValue()
         wplata = self.text_ctrl[1].GetValue()
-        klient = bank.znajdz_klienta(id)
+        conn = sqlite3.connect("banking.db")
+        cursor = conn.cursor()
+            
+        cursor.execute("""
+        SELECT * FROM customers WHERE id = ?
+        """, (id))
+            
+        klient = cursor.fetchone()
+
         try:
             if not klient:
                raise ValueError('Nie znaleziono klienta')
             elif float(wplata) < 0:
                 raise ValueError('Za mała kwota')
-            klient.stan_konta += float(wplata)
+            new_balance = klient[3] + wplata
+            cursor.execute(""" 
+            UPDATE customers balance = ?
+                           """)(new_balance)
             klient.dodaj_historie("wplata", f"+{wplata}", BAZA_TRANZAKCJI)
             wx.MessageBox("Akcja wykonana pomyślnie","informacja",wx.OK)
             self.Destroy()
