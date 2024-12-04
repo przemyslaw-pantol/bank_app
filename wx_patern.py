@@ -17,8 +17,8 @@ class Patterns():
         return text_ctrls
         #podobnie jka eczessniej tylko traz na podastawie funkcji i nazwy tworzymi i dodajemy przycisk 
     
-    def button_pattern(self, panel, sizer, label, function):
-            button = wx.Button(panel, label=label)
+    def button_pattern(self,sizer, label, function):
+            button = wx.Button(self, label=label)
             sizer.Add(button, 0, wx.ALIGN_CENTER | wx.ALL, 5)
             button.Bind(wx.EVT_BUTTON, function)
 

@@ -1,25 +1,17 @@
 #importujemy biblioteki 
 import wx
+import wx.adv
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import sys
-import sqlite3
 #dodajemy moduł z plików
-from bank_logic import Bank,Klient
 from bank_login import User,Database
-from bank_wykres import csv,dane
 from wx_patern import Patterns 
-from sql_bank import add_client,client_info,update_balance
-
-#inicjujemy obiekty klas składowych 
-bank = Bank()
+from sql_bank import * 
 
 data= Database()
 pattern=Patterns()
 
-#przypisujemy do stałych nazwy plików 
-BAZA_KLIENTOW = "dane_bank.csv"
-BAZA_TRANZAKCJI = "C:\\Users\\przem\\Downloads\\bank objekt-20240609T202045Z-001\\bank objekt\\tranzakcje.csv"
 BAZA_LOGOWANIE = "C:\\Users\\przem\\Downloads\\bank objekt-20240609T202045Z-001\\bank objekt\\loginy.csv"
 DB = "banking.db"
 #tworzymy okna dialogowe konretnych funkcji bankowych 
@@ -141,29 +133,16 @@ class Przelew_Dialog(wx.Dialog):
         self.Centre()
    
     def przelew(self, event):
-        a = self.text_ctrl[0].GetValue()
-        b = self.text_ctrl[1].GetValue()
-        c = self.text_ctrl[2].GetValue()
-        klient1 = bank.znajdz_klienta(a)
-        klient2 = bank.znajdz_klienta(b)
         try:
-            if not klient1:
-                raise ValueError("Nie zanleziono nr konta nadawcy")
-            elif not klient2:
-                raise ValueError("Nie zanleziono nr konta odbiorcy")
-            elif float(c) < 0:
-                raise ValueError('Za mała kwota')
-            elif klient1.stan_konta - float(c) < 0:
-                raise ValueError('Za mało środków do wykonania operacji')
-            klient1.stan_konta -= float(c)
-            klient2.stan_konta += float(c)
-            klient1.dodaj_historie("przelew_wychodzacy", f"-{c}", BAZA_TRANZAKCJI)
-            klient2.dodaj_historie("przelew_przychadzacy", f"+{c}", BAZA_TRANZAKCJI)
+            a = self.text_ctrl[0].GetValue()
+            b = self.text_ctrl[1].GetValue()
+            c = self.text_ctrl[2].GetValue()
+            update_balance(a,c,DB,"-")
+            update_balance(b,c,DB,"+")
             wx.MessageBox("Akcja wykonana pomyślnie","informacja",wx.OK)
             self.Destroy()
         except ValueError as e:
             wx.MessageBox(f"Błąd podczas wykonywania akcji: {e}", "Błąd", wx.OK | wx.ICON_ERROR)
-
 class Historia_Dialog(wx.Dialog):
     def __init__(self, parent):
         super(Historia_Dialog, self).__init__(parent, title="Pokaż historie", size=(400, 400))
@@ -181,15 +160,13 @@ class Historia_Dialog(wx.Dialog):
         self.Centre()
 
     def show_history_dialog(self, event):
-        klient_nr = self.text_ctrl[0].GetValue()
-        klient = bank.znajdz_klienta(klient_nr)
-        self.history_text_ctrl.Clear()
         try:
-            if not klient:
-                raise ValueError("Nie znaleziono klienta")
+            klient_nr = self.text_ctrl[0].GetValue()
+            client_data = find_log(klient_nr,DB)
+            self.history_text_ctrl.Clear()
 
-            if klient.historia:
-                for element in klient.historia:
+            if client_data:
+                for element in client_data:
                     self.history_text_ctrl.AppendText(f"{element}\n")
             else:
                 self.history_text_ctrl.AppendText("Brak historii dla tego klienta.")
@@ -201,24 +178,23 @@ class MainFrame(wx.Frame):
     def __init__(self, parent, title):
         super(MainFrame, self).__init__(parent, title=title, size=(600, 540),style=wx.DEFAULT_FRAME_STYLE & ~(wx.MAXIMIZE_BOX | wx.RESIZE_BORDER))
 
-        self.panel = wx.Panel(self)
-
         self.sizer = wx.BoxSizer(wx.VERTICAL)
-
-        self.data_choice = wx.ComboBox(self.panel, choices=['Wybierz typ wykresu ↓','Dzienny', 'Tygodniowy', 'Miesięczny'], style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        self.data_choice.Bind(wx.EVT_COMBOBOX, self.on_data_choice)
-        self.data_choice.SetStringSelection('Wybierz typ wykresu ↓')
-
-        self.sizer.Add(self.data_choice, 0, wx.ALL | wx.EXPAND, 10)
-        
+        self.sizer_date_stat = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer.Add(self.sizer_date_stat)
+     
         self.create_menu_bar()
 
+        self.data_stats=wx.adv.DatePickerCtrlGeneric(self)
+        self.data_stats_2=wx.adv.DatePickerCtrlGeneric(self)
+        self.sizer_date_stat.Add(self.data_stats)
+        self.sizer_date_stat.Add(self.data_stats_2)
+        self.stats=Patterns.button_pattern(self,self.sizer_date_stat,"stats",self.on_stats)
+
+        self.SetSizer(self.sizer)
         self.Bind(wx.EVT_CLOSE, self.on_exit)
 
-        self.figure, self.ax = plt.subplots()
-        self.canvas = FigureCanvas(self, -1, self.figure)
-        self.sizer.Add(self.canvas, 1, wx.EXPAND, 0)
-
+    def on_stats(self,event):
+        return date_stats(self.data_stats.GetValue(),self.data_stats_2.GetValue(),DB)
         
     def on_data_choice(self, event):
         selected_data = self.data_choice.GetValue()
@@ -228,7 +204,6 @@ class MainFrame(wx.Frame):
         menubar = wx.MenuBar()
     
         action_menu = wx.Menu()
-        #dodajemy opcje do rozwijanego menu 
         add_client_item = action_menu.Append(wx.ID_ANY, "Dodaj Klienta", "Dodaj nowego klienta")
         self.Bind(wx.EVT_MENU, self.show_add_client_dialog, add_client_item)
     
@@ -252,7 +227,6 @@ class MainFrame(wx.Frame):
         self.SetMenuBar(menubar)
     
     def on_exit(self, event):
-        bank.zapisz_do_pliku(BAZA_KLIENTOW)
         sys.exit()
     #funkcje uruchamiające okna dilogowe po wybraniu konkretnych opcji
     def show_add_client_dialog(self, event):
@@ -286,6 +260,7 @@ class MainFrame(wx.Frame):
         info_dialog.Destroy()
 
     def plot_day(self, data,sizer):
+        """
         #przy wybraniu opcji wybierz typ itd nic sie nie dzieje 
         if data=="Wybierz typ wykresu ↓":
             return
@@ -311,6 +286,7 @@ class MainFrame(wx.Frame):
         self.ax.set_xlabel(data)
 
         self.canvas.draw()
+        """
 #okno logowania 
 class LoginFrame(wx.Frame):
     def __init__(self, parent=None):
@@ -415,8 +391,6 @@ class AdminPanel(wx.Frame):
             wx.MessageBox(f"Błąd podczas wykonywania akcji: {e}", "Błąd", wx.OK | wx.ICON_ERROR)
 
 if __name__ == "__main__":
-    bank.wczytaj_z_pliku(BAZA_KLIENTOW)
-    bank.wczytaj_historie(BAZA_TRANZAKCJI)
     data.wczytaj_z_pliku(BAZA_LOGOWANIE)
 
     app = wx.App(True)

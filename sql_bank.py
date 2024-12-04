@@ -1,24 +1,8 @@
-
 import sqlite3
 import random
 from datetime import datetime
-
-def create_tables():
-    conn = sqlite3.connect("banking.db")
-    cursor = conn.cursor()
-
-    # Create customers table
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS transactions (
-        id_number TEXT NOT NULL,
-        type TEXT NOT NULL,
-        amount REAL DEFAULT 0.0,
-        date DATE,
-        time TIME
-    )
-    """)
-    conn.commit()
-    conn.close()
+import pandas as pd
+import wx
 
 def client_nr(id):
     padded_id = f"{id:06}"  # Zero-pad the ID to 6 digits
@@ -101,12 +85,12 @@ def update_balance(id, amount, db, mark):
             
             match mark:
                 case "+":
-                    new_balance += float(amount)
+                    new_balance += amount
                     transaction_log(id, "deposit", amount, conn)
                 case "-":
-                    if new_balance < float(amount):
+                    if new_balance < amount:
                         raise ValueError('Insufficient funds')
-                    new_balance -= float(amount)
+                    new_balance -= amount
                     transaction_log(id, "withdrawal", -amount, conn)
                 case _:
                     print("Invalid mark")
@@ -126,3 +110,32 @@ def update_balance(id, amount, db, mark):
     except ValueError as e:
         print(f"Value error: {e}")
 
+def find_log(id,db):
+
+    try:
+        with sqlite3.connect(db) as conn:
+            cursor = conn.cursor()
+            data=cursor.execute("""
+            SELECT * FROM transactions WHERE id_number = ? 
+            """, (id,))
+            return data
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+        return None
+    
+def date_stats(start, end, db):
+    start=start.Format('%Y-%m-%d') 
+    end=end.Format('%Y-%m-%d')
+
+    try:
+        with sqlite3.connect(db) as conn:
+            query = """
+            SELECT * FROM transactions WHERE date BETWEEN ? AND ?
+            """
+            df = pd.read_sql_query(query, conn, params=(start, end))
+        
+        print(df)  
+        return df  
+    
+    except Exception as e:
+        print(f"An error occurred: {e}")  
