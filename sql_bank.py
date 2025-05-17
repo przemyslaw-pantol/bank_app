@@ -2,7 +2,7 @@ import sqlite3
 import random
 from datetime import datetime
 import pandas as pd
-import wx
+import matplotlib.pyplot as plt
 
 def client_nr(id):
     padded_id = f"{id:06}"  # Zero-pad the ID to 6 digits
@@ -130,12 +130,48 @@ def date_stats(start, end, db):
     try:
         with sqlite3.connect(db) as conn:
             query = """
-            SELECT * FROM transactions WHERE date BETWEEN ? AND ?
+            SELECT * FROM transactions WHERE date BETWEEN ? AND ? ORDER BY date ASC
             """
             df = pd.read_sql_query(query, conn, params=(start, end))
-        
-        print(df)  
+            dates={}
+            for x in df['date']:
+                x=str(x)
+                if str(start)[:7] != str(end)[:7]:
+                    x=x[:7]
+                if x not in dates:
+                    dates[x] = 0
+                dates[x] += 1
+                date = list(dates.keys())
+                totals = [x for x in dates.values()]
+
+                # Plot the histogram (bar chart with dates on x-axis)
+            plt.bar(date, totals, color='skyblue', edgecolor='black')
+
+                # Add labels and title
+            plt.xlabel('Date')
+            plt.ylabel('Total Amount')
+            plt.title('Total Amount by Date')
+
+                # Rotate x-axis labels for better readability
+            plt.xticks(rotation=45)
+
+                # Show the plot
+            plt.tight_layout()  # Adjust layout to fit the labels
+            plt.show()
+
         return df  
     
     except Exception as e:
-        print(f"An error occurred: {e}")  
+        print(f"An error occurred: {e}") 
+
+def stats_agg(day,db):
+    try:
+        day=day.Format('%Y-%m-%d') 
+        with sqlite3.connect(db) as conn:
+            query = """
+            SELECT * FROM transactions WHERE date = ?
+            """
+            df = pd.read_sql_query(query, conn, params=(day,))
+            return str(df['amount'].describe())
+    except Exception as e:
+        print(f"An error occurred: {e}") 

@@ -18,12 +18,17 @@ def generate_random_transactions(n=10000):
     for _ in range(n):
         id_number = random.choice(id_numbers)
         txn_type = random.choice(types)
-        amount = round(random.uniform(1, 500), 2)  # Amount between 1 and 500
-        if txn_type in ["wyplata", "przelew"]:
-            amount = -amount  # Negative for withdrawals or transfers
         random_date = datetime.now() - timedelta(days=random.randint(0, 30))  # Past 30 days
         date = random_date.strftime("%Y-%m-%d")
         time = random_date.strftime("%H:%M:%S")
+        amount = round(random.uniform(1, 500), 2)  # Amount between 1 and 500
+        if txn_type == "przelew":
+            data.append((id_number, "przelew_wychodzacy",-amount, date, time))
+            data.append((random.choice(id_numbers), "przelew_przychodzacy", amount, date, time))
+            continue
+        if txn_type =="wyplata":
+            amount = -amount  # Negative for withdrawals or transfers
+
         data.append((id_number, txn_type, amount, date, time))
     
     return data
