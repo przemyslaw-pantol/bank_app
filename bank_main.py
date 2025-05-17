@@ -15,6 +15,18 @@ pattern=Patterns()
 BAZA_LOGOWANIE = "C:\\Users\\przem\\Downloads\\bank objekt-20240609T202045Z-001\\bank objekt\\loginy.csv"
 DB = "banking.db"
 #tworzymy okna dialogowe konretnych funkcji bankowych 
+
+
+class Find_Client_Dialog(wx.Dialog):
+    def __init__(self, parent,name,surname):
+        super(Find_Client_Dialog, self).__init__(parent, title="Dodaj Klienta", size=(300, 200))
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        self.text=wx.StaticText(self,label=client_info(name,surname,DB))
+
+        self.SetSizer(sizer)
+        self.Centre()
+
 class Add_Client_Dialog(wx.Dialog):
     def __init__(self, parent):
         super(Add_Client_Dialog, self).__init__(parent, title="Dodaj Klienta", size=(300, 200))
@@ -179,10 +191,19 @@ class MainFrame(wx.Frame):
         super(MainFrame, self).__init__(parent, title=title, size=(600, 540),style=wx.DEFAULT_FRAME_STYLE & ~(wx.MAXIMIZE_BOX | wx.RESIZE_BORDER))
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.sizer_find= wx.BoxSizer(wx.HORIZONTAL)
         self.sizer_date_stat = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer_text_stat = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer_text_stat_2 = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer.Add(self.sizer_find)
         self.sizer.Add(self.sizer_date_stat)
-     
+        self.sizer.Add(self.sizer_text_stat)
+        self.sizer.Add(self.sizer_text_stat_2)
+        
         self.create_menu_bar()
+
+        self.find_data = pattern.lab_text_patern(self,self.sizer_find,["Name:","Surname:"])
+        self.find_button = Patterns.button_pattern(self,self.sizer_find,"Find client",self.show_find_dialog)
 
         self.data_stats=wx.adv.DatePickerCtrlGeneric(self)
         self.data_stats_2=wx.adv.DatePickerCtrlGeneric(self)
@@ -190,11 +211,29 @@ class MainFrame(wx.Frame):
         self.sizer_date_stat.Add(self.data_stats_2)
         self.stats=Patterns.button_pattern(self,self.sizer_date_stat,"stats",self.on_stats)
 
+        self.label_stats = wx.StaticText(self,label="stats")
+        self.sizer_text_stat_2.Add(self.label_stats)
+
+        self.data_stats_3=wx.adv.DatePickerCtrlGeneric(self)
+        self.sizer_text_stat.Add(self.data_stats_3)
+        self.text_stats_button = Patterns.button_pattern(self,self.sizer_text_stat,"stats",self.agg_stats)
+                                                         
+
         self.SetSizer(self.sizer)
         self.Bind(wx.EVT_CLOSE, self.on_exit)
 
     def on_stats(self,event):
         return date_stats(self.data_stats.GetValue(),self.data_stats_2.GetValue(),DB)
+    
+    def agg_stats(self,event):
+        data = stats_agg(self.data_stats_3.GetValue(),DB)
+        self.label_stats.SetLabel(data)
+
+    def show_find_dialog(self,event):
+        dodaj_klienta_dialog = Find_Client_Dialog(self,self.find_data[0].GetValue(),self.find_data[1].GetValue())
+        dodaj_klienta_dialog.ShowModal()
+        dodaj_klienta_dialog.Destroy()
+        
         
     def on_data_choice(self, event):
         selected_data = self.data_choice.GetValue()

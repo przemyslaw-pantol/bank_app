@@ -1,25 +1,46 @@
 import wx
-import wx.lib.agw.gradientbutton as GB
 
-class MyApp(wx.App):
-    def OnInit(self):
-        frame = wx.Frame(None, title="Modern wxPython UI", size=(400, 300))
+class CustomMonthYearPicker(wx.Frame):
+    def __init__(self, parent, title):
+        super().__init__(parent, title=title, size=(300, 200))
 
-        panel = wx.Panel(frame)
-        panel.SetBackgroundColour(wx.Colour(240, 240, 240))
+        panel = wx.Panel(self)
+        vbox = wx.BoxSizer(wx.VERTICAL)
 
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        title = wx.StaticText(panel, label="Welcome to Modern wxPython!")
-        title_font = wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
-        title.SetFont(title_font)
-        sizer.Add(title, 0, wx.ALIGN_CENTER | wx.TOP, 20)
+        # Label
+        label = wx.StaticText(panel, label="Select Year and Month:")
+        vbox.Add(label, flag=wx.LEFT | wx.TOP, border=10)
 
-        button = GB.GradientButton(panel, label="Click Me")
-        sizer.Add(button, 0, wx.ALIGN_CENTER | wx.TOP, 20)
+        # Month Dropdown
+        months = [f"{i:02d}" for i in range(1, 13)]  # 01 to 12
+        self.month_combo = wx.ComboBox(panel, choices=months, style=wx.CB_READONLY)
+        self.month_combo.SetValue("01")  # Default to January
+        vbox.Add(self.month_combo, flag=wx.LEFT | wx.TOP, border=10)
 
-        panel.SetSizer(sizer)
-        frame.Show()
-        return True
+        # Year Dropdown
+        current_year = wx.DateTime.Now().GetYear()
+        years = [str(y) for y in range(current_year - 50, current_year + 51)]  # Past 50 and next 50 years
+        self.year_combo = wx.ComboBox(panel, choices=years, style=wx.CB_READONLY)
+        self.year_combo.SetValue(str(current_year))  # Default to current year
+        vbox.Add(self.year_combo, flag=wx.LEFT | wx.TOP, border=10)
 
-app = MyApp()
-app.MainLoop()
+        # OK Button
+        button = wx.Button(panel, label="Get Selected Year & Month")
+        button.Bind(wx.EVT_BUTTON, self.on_get_date)
+        vbox.Add(button, flag=wx.LEFT | wx.TOP, border=10)
+
+        panel.SetSizer(vbox)
+
+        self.Centre()
+        self.Show()
+
+    def on_get_date(self, event):
+        month = self.month_combo.GetValue()
+        year = self.year_combo.GetValue()
+        wx.MessageBox(f"Selected Year: {year}\nSelected Month: {month}", "Info")
+
+
+if __name__ == "__main__":
+    app = wx.App()
+    CustomMonthYearPicker(None, title="Year and Month Picker")
+    app.MainLoop()
