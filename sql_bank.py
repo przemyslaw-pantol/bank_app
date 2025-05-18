@@ -59,13 +59,18 @@ def transaction_log(id_number, type, amount, conn):
     except sqlite3.Error as e:
         print(f"Database error: {e}")
 
-def client_info(name, surname, conn):
+def client_info(name, surname, db):
     try:
-        cursor = conn.cursor()
-        cursor.execute("""
-        SELECT * FROM customers WHERE name = ? AND surname = ?
-        """, (name, surname))
-        return cursor.fetchone()
+        with sqlite3.connect(db) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+            SELECT * FROM customers WHERE name = ? AND surname = ?
+            """, (name, surname))
+            data = cursor.fetchone()
+            if data is None:
+                return "client not found"
+            return data
+    
     except sqlite3.Error as e:
         print(f"Database error: {e}")
         return None
