@@ -6,16 +6,15 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import sys
 #dodajemy moduł z plików
 from bank_login import User,Database
-from wx_patern import Patterns 
+from wx_patern import *
 from sql_bank import * 
 
 data= Database()
-pattern=Patterns()
 
-BAZA_LOGOWANIE = "C:\\Users\\przem\\Downloads\\bank objekt-20240609T202045Z-001\\bank objekt\\loginy.csv"
+
+BAZA_LOGOWANIE = "loginy.csv"
 DB = "banking.db"
 #tworzymy okna dialogowe konretnych funkcji bankowych 
-
 
 class Find_Client_Dialog(wx.Dialog):
     def __init__(self, parent,name,surname):
@@ -23,6 +22,7 @@ class Find_Client_Dialog(wx.Dialog):
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.text=wx.StaticText(self,label=client_info(name,surname,DB))
+        sizer.Add(self.text, 0, wx.ALL, 5)
 
         self.SetSizer(sizer)
         self.Centre()
@@ -31,14 +31,13 @@ class Add_Client_Dialog(wx.Dialog):
     def __init__(self, parent):
         super(Add_Client_Dialog, self).__init__(parent, title="Dodaj Klienta", size=(300, 200))
 
-        panel = wx.Panel(self)
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.text_ctrl = pattern.lab_text_patern(panel, sizer, ['Imię', 'Nazwisko'])
+        self.text_ctrl = lab_text_patern(self,sizer, ['Imię', 'Nazwisko'])
 
-        pattern.button_pattern(panel, sizer, 'Dodaj Klienta', self.add_client)
+        button_pattern(self,sizer, 'Dodaj Klienta', self.add_client)
 
-        panel.SetSizer(sizer)
+        self.SetSizer(sizer)
         self.Centre()
 
     def add_client(self, event):
@@ -57,17 +56,15 @@ class Add_Client_Dialog(wx.Dialog):
                 wx.MessageBox(f"Błąd podczas tworzenia konta: {e}", "Błąd", wx.OK | wx.ICON_ERROR)
 
 class Info_Klient_Dialog(wx.Dialog):
-    
     def __init__(self, parent):
         super(Info_Klient_Dialog, self).__init__(parent, title="Info", size=(200, 200))
 
-        panel = wx.Panel(self)
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.text_ctrl = pattern.lab_text_patern(panel,sizer,['Imie:','Nazwisko'])
-        pattern.button_pattern(panel,sizer,'Info',self.info)
+        self.text_ctrl = lab_text_patern(self, sizer, ['Imie:','Nazwisko'])
+        button_pattern(self, sizer, 'Info', self.info)
 
-        panel.SetSizer(sizer)
+        self.SetSizer(sizer)
         self.Centre()
 
     def info(self,event):
@@ -84,17 +81,15 @@ class Info_Klient_Dialog(wx.Dialog):
             wx.MessageBox(f"Błąd podczas wykonywania akcji: {e}", "Błąd", wx.OK | wx.ICON_ERROR)
 
 class Wpłata_Dialog(wx.Dialog):
-    
     def __init__(self, parent):
         super(Wpłata_Dialog, self).__init__(parent, title="Wpłata", size=(300, 200))
 
-        panel = wx.Panel(self)
         sizer = wx.BoxSizer(wx.VERTICAL)
         
-        self.text_ctrl = pattern.lab_text_patern(panel, sizer, ['Nr klienta', 'Kwota'])
-        pattern.button_pattern(panel, sizer, 'Wpłać', self.dodaj_srodki)
+        self.text_ctrl = lab_text_patern(self, sizer, ['Nr klienta', 'Kwota'])
+        button_pattern(self, sizer, 'Wpłać', self.dodaj_srodki)
 
-        panel.SetSizer(sizer)
+        self.SetSizer(sizer)
         self.Centre()
         
     def dodaj_srodki(self, event):
@@ -108,17 +103,15 @@ class Wpłata_Dialog(wx.Dialog):
             wx.MessageBox(f"Błąd podczas wykonywania akcji: {e}", "Błąd", wx.OK | wx.ICON_ERROR)
         
 class Wypłata_Dialog(wx.Dialog):
-   
     def __init__(self, parent):
         super(Wypłata_Dialog, self).__init__(parent, title="Wypłata", size=(300, 200))
     
-        panel = wx.Panel(self)
         sizer = wx.BoxSizer(wx.VERTICAL)
      
-        self.text_ctrl=pattern.lab_text_patern(panel,sizer,['Nr Klienta:','Kwota:'])
-        pattern.button_pattern(panel,sizer,"Wypłata",self.wypłać)
-     
-        panel.SetSizer(sizer)
+        self.text_ctrl=lab_text_patern(self, sizer, ['Nr Klienta:','Kwota:'])
+        button_pattern(self, sizer, "Wypłata", self.wypłać)
+
+        self.SetSizer(sizer)
         self.Centre()
     
     def wypłać(self, event):
@@ -132,16 +125,14 @@ class Wypłata_Dialog(wx.Dialog):
             wx.MessageBox(f"Błąd podczas wykonywania akcji: {e}", "Błąd", wx.OK | wx.ICON_ERROR)
 
 class Przelew_Dialog(wx.Dialog):
-   
     def __init__(self, parent):
         super(Przelew_Dialog, self).__init__(parent, title="Przelew", size=(300, 400))
    
-        panel = wx.Panel(self)
         sizer = wx.BoxSizer(wx.VERTICAL)
-        self.text_ctrl=pattern.lab_text_patern(panel,sizer,['Nr klienta nadawcy','Nr klienta odbiorcy','Kwota'])
-        pattern.button_pattern(panel,sizer,'Przelew',self.przelew)
+        self.text_ctrl=lab_text_patern(self, sizer, ['Nr klienta nadawcy','Nr klienta odbiorcy','Kwota'])
+        button_pattern(self, sizer, 'Przelew', self.przelew)
 
-        panel.SetSizer(sizer)
+        self.SetSizer(sizer)
         self.Centre()
    
     def przelew(self, event):
@@ -155,20 +146,20 @@ class Przelew_Dialog(wx.Dialog):
             self.Destroy()
         except ValueError as e:
             wx.MessageBox(f"Błąd podczas wykonywania akcji: {e}", "Błąd", wx.OK | wx.ICON_ERROR)
+
 class Historia_Dialog(wx.Dialog):
     def __init__(self, parent):
         super(Historia_Dialog, self).__init__(parent, title="Pokaż historie", size=(400, 400))
 
-        panel = wx.Panel(self)
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.text_ctrl = pattern.lab_text_patern(panel, sizer, ['Nr klienta'])
-        pattern.button_pattern(panel, sizer, 'Pokaż historie', self.show_history_dialog)
+        self.text_ctrl = lab_text_patern(self, sizer, ['Nr klienta'])
+        button_pattern(self, sizer, 'Pokaż historie', self.show_history_dialog)
 
-        self.history_text_ctrl = wx.TextCtrl(panel, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.HSCROLL, size=(380, 280))
+        self.history_text_ctrl = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.HSCROLL, size=(380, 280))
         sizer.Add(self.history_text_ctrl, 1, wx.EXPAND | wx.ALL, 10)
 
-        panel.SetSizer(sizer)
+        self.SetSizer(sizer)
         self.Centre()
 
     def show_history_dialog(self, event):
@@ -185,6 +176,7 @@ class Historia_Dialog(wx.Dialog):
 
         except ValueError as e:
             wx.MessageBox(f"Błąd podczas wykonywania akcji: {e}", "Błąd", wx.OK | wx.ICON_ERROR)
+
 #głwone okno aplikacji 
 class MainFrame(wx.Frame):
     def __init__(self, parent, title):
@@ -202,21 +194,29 @@ class MainFrame(wx.Frame):
         
         self.create_menu_bar()
 
-        self.find_data = pattern.lab_text_patern(self,self.sizer_find,["Name:","Surname:"])
-        self.find_button = Patterns.button_pattern(self,self.sizer_find,"Find client",self.show_find_dialog)
+        self.find_data = lab_text_patern(self,self.sizer_find,["Name:","Surname:"])
+        self.find_button = button_pattern(self,self.sizer_find,"Find client",self.show_find_dialog)
 
-        self.data_stats=wx.adv.DatePickerCtrlGeneric(self)
-        self.data_stats_2=wx.adv.DatePickerCtrlGeneric(self)
+        self.data_stats=wx.adv.DatePickerCtrl(self)
+        self.data_stats_2=wx.adv.DatePickerCtrl(self)
         self.sizer_date_stat.Add(self.data_stats)
         self.sizer_date_stat.Add(self.data_stats_2)
-        self.stats=Patterns.button_pattern(self,self.sizer_date_stat,"stats",self.on_stats)
+        self.stats=button_pattern(self,self.sizer_date_stat,"stats",self.on_stats)
+
+        self.label_stats = wx.StaticText(self,label="stats")
+        self.sizer_text_stat_2.Add(self.label_stats)
+
+        self.data_stats_3=wx.adv.DatePickerCtrl(self)
+        self.sizer_text_stat.Add(self.data_stats_3)
+        self.text_stats_button = button_pattern(self,self.sizer_text_stat,"stats",self.agg_stats)
+                                                         
 
         self.label_stats = wx.StaticText(self,label="stats")
         self.sizer_text_stat_2.Add(self.label_stats)
 
         self.data_stats_3=wx.adv.DatePickerCtrlGeneric(self)
         self.sizer_text_stat.Add(self.data_stats_3)
-        self.text_stats_button = Patterns.button_pattern(self,self.sizer_text_stat,"stats",self.agg_stats)
+        self.text_stats_button = button_pattern(self,self.sizer_text_stat,"stats",self.agg_stats)
                                                          
 
         self.SetSizer(self.sizer)
@@ -299,33 +299,8 @@ class MainFrame(wx.Frame):
         info_dialog.Destroy()
 
     def plot_day(self, data,sizer):
-        """
-        #przy wybraniu opcji wybierz typ itd nic sie nie dzieje 
-        if data=="Wybierz typ wykresu ↓":
-            return
-        #czyscimu wykres w głownym oknie 
-        self.ax.clear()
- 
-        plik = csv(BAZA_TRANZAKCJI)
-        # na podstawie wyboru w combo boksie tworzymy konkretne dane do wykresu 
-        if data == "Dzienny":
-            y = dane(plik,"dzien")
-            x = range(1, max(y) + 2)
-            col='Blue'
-        elif data == "Tygodniowy":
-            y = dane(plik,"tydzien")
-            x = range(1, max(y) + 2)
-            col='red'
-        else:
-            y = dane(plik,"msc")
-            x= range(1,13)
-            col = 'yellow'
-        self.ax.hist(y,x , color=col, rwidth=0.8)
-        self.ax.set_ylabel('Ilość tranzakcji')
-        self.ax.set_xlabel(data)
+        pass
 
-        self.canvas.draw()
-        """
 #okno logowania 
 class LoginFrame(wx.Frame):
     def __init__(self, parent=None):
@@ -393,18 +368,18 @@ class LoginPanel(wx.Panel):
 
     def on_close(self, event):
         self.Destroy()
+
 #okno aministratora uruchamia sie po wpisaniu admin admin w polu loogwania 
 class AdminPanel(wx.Frame):
     def __init__(self, parent, title):
         super(AdminPanel, self).__init__(parent, title=title, size=(300, 300))
 
-        panel = wx.Panel(self)
         sizer = wx.BoxSizer(wx.VERTICAL)
-        self.text_ctrl = pattern.lab_text_patern(panel,sizer,['Login'])
-        self.text_ctrl2 = pattern.lab_text_patern(panel,sizer,['Password','Repeat password'],wx.TE_PASSWORD)
-        pattern.button_pattern(panel,sizer,"Sign in",self.sign_in)
+        self.text_ctrl = lab_text_patern(self, sizer, ['Login'])
+        self.text_ctrl2 = lab_text_patern(self, sizer, ['Password','Repeat password'], wx.TE_PASSWORD)
+        button_pattern(self, sizer, "Sign in", self.sign_in)
 
-        panel.SetSizer(sizer)
+        self.SetSizer(sizer)
         self.Centre()
 
     def sign_in(self, event):
