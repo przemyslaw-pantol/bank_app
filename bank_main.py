@@ -211,6 +211,14 @@ class MainFrame(wx.Frame):
         self.text_stats_button = button_pattern(self,self.sizer_text_stat,"stats",self.agg_stats)
                                                          
 
+        self.label_stats = wx.StaticText(self,label="stats")
+        self.sizer_text_stat_2.Add(self.label_stats)
+
+        self.data_stats_3=wx.adv.DatePickerCtrlGeneric(self)
+        self.sizer_text_stat.Add(self.data_stats_3)
+        self.text_stats_button = button_pattern(self,self.sizer_text_stat,"stats",self.agg_stats)
+                                                         
+
         self.SetSizer(self.sizer)
         self.Bind(wx.EVT_CLOSE, self.on_exit)
 
